@@ -1,0 +1,48 @@
+{% if not flask_crossdomain_is_primary %}
+<script type="text/javascript">
+function performCrossDomainSessionCheck() {
+  {% if not session.new %}
+    var lastCheck = localStorage.getItem('last_session_check');
+    if (lastCheck) {
+      lastCheck = new Date(lastCheck);
+      if (lastCheck.getTime() > (new Date().getTime() - 1000*3600*24*7)) {
+        // less than a week since the last check
+        return;
+      }
+    }
+  {% endif %}
+  function postAjax(data, primary_domain, success) {
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', primary_domain ? "{{ flask_crossdomain_url }}" : "{{ url_for('flask_crossdomain') }}");
+    xhr.withCredentials = true;
+    xhr.setRequestHeader('Content-Type', 'application/json');
+    xhr.onload = function() {
+      if (xhr.status === 200) {
+        success(JSON.parse(xhr.responseText));
+      }
+    };
+    xhr.send(JSON.stringify(data));
+  }
+  postAjax({
+    action: "check",
+    current_token: "{{ session.get('_token') }}",
+    current_is_new: {{ session.new|lower }}
+  }, true, function(data) {
+    if (data.result === 'use_current') {
+      localStorage.setItem('last_session_check', new Date().toISOString());
+    } else if (data.result === 'replace') {
+      postAjax({
+        action: "replace",
+        token: data.new_token
+      }, false, function(data) {
+        if (data.result === 'replaced') {
+          localStorage.setItem('last_session_check', new Date().toISOString());
+          window.location.reload();
+        }
+      });
+    }
+  });
+}
+performCrossDomainSessionCheck();
+</script>
+{% endif %}
