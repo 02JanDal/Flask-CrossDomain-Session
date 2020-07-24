@@ -46,8 +46,6 @@ class ServerSessionInterface(SessionInterface):
             return DummySession()
         if request_.method == 'OPTIONS':
             return DummySession()
-        if not self._extension.may_set_cookie:
-            return DummySession()
 
         instance = self._extension.session_instance_class.from_request(app, request_)
         is_new = instance.session.is_new()
@@ -59,6 +57,11 @@ class ServerSessionInterface(SessionInterface):
             return
 
         sess: SessionMixin = session.instance.session
+
+        if not self._extension.may_set_cookie:
+            if sess.is_new():
+                sess.delete()
+            return
 
         if session.accessed and sess.type == SessionType.cookie:
             response.vary.add('Cookie')
