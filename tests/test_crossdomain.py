@@ -48,7 +48,7 @@ class CookieTestCase(TestCase):
 
         @app.route('/')
         def home():
-            return render_template_string('{{ flask_crossdomain_code() }}\n\n\nHello, World!')
+            return render_template_string('{{ flask_crossdomain_session_code() }}\n\n\nHello, World!')
 
         @app.route('/set/<key>/<value>')
         def set(key, value):

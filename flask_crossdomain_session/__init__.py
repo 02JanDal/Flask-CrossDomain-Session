@@ -9,11 +9,18 @@ from typing import Callable, List, Iterable, Type
 from flask import Flask, current_app, render_template_string, url_for, request, jsonify, session
 from markupsafe import Markup
 
-from flask_crossdomain_session.model import SessionInstanceMixin, SessionType
+from flask_crossdomain_session.model import SessionInstanceMixin, SessionType, SessionMixin, make_session_class, \
+    make_session_instance_class
 from flask_crossdomain_session.session_interface import ServerSessionInterface, SessionValueAccessor
 
 # flask.session is actually a SessionValueAccessor
 session: SessionValueAccessor
+
+
+__all__ = [
+    'SessionInstanceMixin', 'SessionMixin', 'SessionType',
+    'make_session_class', 'make_session_instance_class', 'CrossDomainSession'
+]
 
 
 class CrossDomainSession:
@@ -37,7 +44,7 @@ class CrossDomainSession:
 
         @app.context_processor
         def context_processor():
-            return dict(flask_crossdomain_code=self._html)
+            return dict(flask_crossdomain_session_code=self._html)
 
         @app.after_request
         def add_crossdomain_headers(response):
