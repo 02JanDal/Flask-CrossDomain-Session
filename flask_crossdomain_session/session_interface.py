@@ -30,7 +30,11 @@ class SessionValueAccessor(SecureCookieSession):
 
 
 class DummySession(SecureCookieSession):
-    pass
+    def __getattr__(self, item):
+        return self
+
+    def __setattr__(self, key, value):
+        pass
 
 
 class ServerSessionInterface(SessionInterface):
@@ -38,10 +42,11 @@ class ServerSessionInterface(SessionInterface):
         self._extension = extension
 
     def open_session(self, app, request_):
-        is_static_endpoint = request_.endpoint and (
-            request_.endpoint.endswith('.static') or request_.endpoint == 'static'
-        )
-        if is_static_endpoint or request_.method == 'OPTIONS' or not self._extension.may_set_cookie:
+        if request_.endpoint and (request_.endpoint.endswith('.static') or request_.endpoint == 'static'):
+            return DummySession()
+        if request_.method == 'OPTIONS':
+            return DummySession()
+        if not self._extension.may_set_cookie:
             return DummySession()
 
         instance = self._extension.session_instance_class.from_request(app, request_)
