@@ -23,6 +23,10 @@ __all__ = [
 ]
 
 
+def _origin_hostname_in_request():
+    return request.headers['Origin'].split('/')[-1].split(':')[0]
+
+
 class CrossDomainSession:
     def __init__(self, app: Flask = None):
         self.app = app
@@ -51,13 +55,14 @@ class CrossDomainSession:
             if request.endpoint != 'static':
                 if 'Origin' not in request.headers:
                     return response
-                origin_domain = request.headers['Origin'].split('/')[-1].split(':')[0]
+                origin_domain = _origin_hostname_in_request()
                 is_known_domain = origin_domain in self.domains
                 is_localhost = origin_domain == 'localhost'
                 if is_known_domain or (app.debug and is_localhost):
                     response.headers['Access-Control-Allow-Origin'] = request.headers['Origin']
                     response.headers['Access-Control-Allow-Credentials'] = 'true'
-                    response.headers['Access-Control-Allow-Headers'] = ', '.join(sorted(response.headers.keys()))
+                    response.headers['Access-Control-Allow-Headers'] = request.headers.get(
+                        'Access-Control-Request-Headers')
                     response.headers['Access-Control-Allow-Methods'] = 'POST, DELETE, HEAD, PATCH, GET, OPTIONS'
             else:
                 response.headers.add('Access-Control-Allow-Origin', '*')
@@ -124,7 +129,7 @@ class CrossDomainSession:
             if not token or is_new is None:
                 return jsonify(result='error',
                                message='missing one or more of "current_token" or "current_is_new"'), 400
-            if 'Origin' not in request.headers or request.headers['Origin'].split('/')[-1] not in self.domains:
+            if 'Origin' not in request.headers or _origin_hostname_in_request() not in self.domains:
                 return jsonify(result='error', message='invalid or missing Origin'), 400
             origin_session = self.session_instance_class.session_class.find_by_token(token)
             if token == session.instance.session.token:
