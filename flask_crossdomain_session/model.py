@@ -57,7 +57,7 @@ def make_session_class(db, user_class):
         token = db.Column(db.String(128), unique=True, nullable=False)
 
         ip = db.Column(db.String(64), nullable=True)
-        user_agent = db.Column(db.String(128), nullable=True)
+        user_agent = db.Column(db.String(512), nullable=True)
 
         user_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'), nullable=True)
         user = db.relationship(user_class)
